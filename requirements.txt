@@ -1,0 +1,10 @@
+pandas
+numpy
+pyyaml
+matplotlib
+seaborn
+streamlit
+glob2
+sqlalchemy
+psycopg2-binary
+mysql-connector-python
