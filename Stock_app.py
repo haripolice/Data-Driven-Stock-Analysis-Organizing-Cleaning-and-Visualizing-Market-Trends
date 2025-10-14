@@ -173,7 +173,7 @@ if r == '2.Cumulative Return Over Time':
 
 if r == '3.Sector-wise Performance':
 
-    sectors_df = glob.glob(f"Sector_data - Sheet1.csv")
+    sectors_df = pd.read_csv(f"Sector_data - Sheet1.csv")
 
     sectors_df['tic_symbol']=sectors_df['Symbol'].str.split(':').str[1]
 
