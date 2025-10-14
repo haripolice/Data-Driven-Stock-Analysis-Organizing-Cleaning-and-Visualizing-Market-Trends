@@ -17,7 +17,7 @@ all_dfs = []
 
 for i in stk_data_list:
     # Fix 1: Use f-string to insert the folder name into the path
-    yaml_files = glob.glob(fr"C:\Users\KRHA1002\OneDrive - Nielsen IQ\Profile\GUVI\Project 2\data\{i}\*.yaml")
+   yaml_files = glob.glob(f"data/{i}/*.yaml")
     print(f"Processing month: {i}")
     print(f"Found YAML files: {len(yaml_files)}")
 
