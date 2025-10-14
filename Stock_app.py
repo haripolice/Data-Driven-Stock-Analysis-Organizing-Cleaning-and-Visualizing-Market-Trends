@@ -79,196 +79,230 @@ for Tic in Tickers:
     avg_volumes.append(avg_volume)
 
 yearly_return_df = pd.DataFrame({
-    'Tickers': Tickers,
+    'Tickers' : Tickers,
     'Annual_returns': returns,
     'start_prices': start_prices,
     'close_prices': close_prices,
-    'avg_prices': avg_prices,
-    'avg_volumes': avg_volumes,
-    'std_devs': std_devs,
-    'cum_returns': cum_returns
-})
+    'avg_prices':avg_prices,
+    'avg_volumes':avg_volumes,
+    'std_devs':std_devs,
+    'cum_returns':cum_returns
+    })
 
-# ----------------------------- #
-# 📊 STREAMLIT NAVIGATION
-# ----------------------------- #
-r = st.sidebar.radio('Navigation', [
-    'Key Metrics',
-    '1.Volatility Analysis',
-    '2.Cumulative Return Over Time',
-    '3.Sector-wise Performance',
-    '4.Stock Price Correlation',
-    '5.Top 5 Gainers and Losers'
-])
+r = st.sidebar.radio('Navigation',['Key Metrics','1.Volatility Analysis','2.Cumulative Return Over Time', '3.Sector-wise Performance',
+                                   '4.Stock Price Correlation','5.Top 5 Gainers and Losers'])
+if r == 'Key Metrics': #! KEY METRICS
 
-# ----------------------------- #
-# 1️⃣ KEY METRICS
-# ----------------------------- #
-if r == 'Key Metrics':
     st.header('🟢 Top 10 Gainers')
-    st.markdown("---")
+    st.markdown("---")  # Horizontal divider
+
     top_10_green_stocks = yearly_return_df.sort_values(by='Annual_returns', ascending=False)
+    top_10_green_stocks.head(10)
+
     st.dataframe(top_10_green_stocks.head(10))
 
     st.header('🔴 Top 10 Decliners')
-    st.markdown("---")
+    st.markdown("---")  # Horizontal divider
+
     top_10_loss_stocks = yearly_return_df.sort_values(by='Annual_returns', ascending=True)
+    top_10_loss_stocks.head(10)
+
     st.dataframe(top_10_loss_stocks.head(10))
 
     st.header('📦 Quick Market Snapshot')
-    st.markdown("---")
+    st.markdown("---")  # Horizontal divider
 
-    col1, col2, col3 = st.columns(3, gap="small")
-    green_stocks = (yearly_return_df['Annual_returns'] > 0).sum()
-    red_stocks = (yearly_return_df['Annual_returns'] < 0).sum()
-
+    col1,col2,col3 = st.columns(3,gap = "small")
     col1.subheader('⚖️ Green vs Red Breakdown')
+
+    green_stocks = (top_10_green_stocks['Annual_returns']>0).sum()
+    print(green_stocks)
+
+    red_stocks = (top_10_loss_stocks['Annual_returns']<0).sum()
+    print(red_stocks)
+
     col1.write(f"Total Green Stocks: {green_stocks}")
     col1.write(f"Total Red Stocks: {red_stocks}")
 
     col2.subheader('💰 Average Price (All Stocks)')
-    col2.dataframe(yearly_return_df[['Tickers', 'avg_prices']])
+
+    avg_price_df = yearly_return_df[['Tickers','avg_prices']]
+
+    col2.dataframe(avg_price_df)
 
     col3.subheader('📊 Average Daily Volume')
-    col3.dataframe(yearly_return_df[['Tickers', 'avg_volumes']])
 
-# ----------------------------- #
-# 2️⃣ VOLATILITY ANALYSIS
-# ----------------------------- #
-if r == '1.Volatility Analysis':
-    top_10_most_vol_df = yearly_return_df.sort_values(['std_devs'], ascending=False).head(10)
+    avg_volume_df = yearly_return_df[['Tickers','avg_volumes']]
+
+    col3.dataframe(avg_volume_df)
+
+    # st.subheader('⚖️ Green vs Red Breakdown')
+    # st.subheader('💰 Average Price (All Stocks)')
+    # st.subheader('📊 Average Daily Volume')
+
+
+
+if r == '1.Volatility Analysis': 
+    top_10_most_vol_df = (yearly_return_df.sort_values(['std_devs'],ascending=False)).reset_index(drop=True).head(10)
+
     st.dataframe(top_10_most_vol_df)
 
-    plt.figure(figsize=(8, 4))
-    plt.bar(top_10_most_vol_df['Tickers'], top_10_most_vol_df['std_devs'])
+    plt.bar(top_10_most_vol_df['Tickers'],top_10_most_vol_df['std_devs'])
     plt.xlabel('Stock Tickers')
     plt.ylabel('Standard Deviation')
     plt.title('Top 10 Most Volatile Stocks')
-    plt.xticks(rotation=75)
-    st.pyplot(plt)
+    plt.xticks(rotation = 75)
 
-# ----------------------------- #
-# 3️⃣ CUMULATIVE RETURN
-# ----------------------------- #
+    st.pyplot(plt)  
+
 if r == '2.Cumulative Return Over Time':
-    top_5_cum = yearly_return_df.sort_values(['cum_returns'], ascending=False).head(5)
+    top_5_cum = yearly_return_df.sort_values(['cum_returns'],ascending=False).reset_index(drop=True).head(5)
     st.dataframe(top_5_cum)
-    plt.figure(figsize=(8, 4))
-    plt.plot(top_5_cum['Tickers'], top_5_cum['cum_returns'], marker='o', linestyle='--', color='blue')
+    plt.plot(top_5_cum['Tickers'],top_5_cum['cum_returns'], marker='o', linestyle='--', color='blue')
     plt.xlabel('Stock Ticker')
     plt.ylabel('Cumulative Return')
     plt.title('Cumulative Return by Ticker')
     plt.xticks(rotation=45)
     plt.grid(True)
+
     st.pyplot(plt)
 
-# ----------------------------- #
-# 4️⃣ SECTOR-WISE PERFORMANCE
-# ----------------------------- #
+
 if r == '3.Sector-wise Performance':
-    try:
-        sectors_df = pd.read_csv(r'C:\Users\kanna\Desktop\GUVI\5.Project\2.Data-Driven Stock Analysis\Sector_data - Sheet1.csv')
-        sectors_df['tic_symbol'] = sectors_df['Symbol'].str.split(':').str[1]
-        yearly_return_df['Tickers'] = yearly_return_df['Tickers'].str.strip()
-        sectors_df['tic_symbol'] = sectors_df['tic_symbol'].str.strip()
 
-        sector_map = dict(zip(sectors_df['tic_symbol'], sectors_df['sector']))
-        yearly_return_df['sector'] = yearly_return_df['Tickers'].map(sector_map)
-        yearly_return_df.loc[yearly_return_df['Tickers'] == 'TATACONSUM', 'sector'] = 'FMCG'
+    sectors_df = pd.read_csv(r'C:\Users\kanna\Desktop\GUVI\5.Project\2.Data-Driven Stock Analysis\Sector_data - Sheet1.csv')
 
-        manual_map = {'BHARTIARTL': 'TELECOM', 'ADANIENT': 'MISCELLANEOUS', 'BRITANNIA': 'FMCG'}
-        yearly_return_df['sector'] = yearly_return_df['Tickers'].map(manual_map).fillna(yearly_return_df['sector'])
+    sectors_df['tic_symbol']=sectors_df['Symbol'].str.split(':').str[1]
 
-        sectors = list(yearly_return_df['sector'].unique())
-        sec_annual_returns = [yearly_return_df[yearly_return_df['sector'] == sec]['Annual_returns'].mean() for sec in sectors]
+    yearly_return_df['Tickers'] = yearly_return_df['Tickers'].str.strip()
+    sectors_df['tic_symbol'] = sectors_df['tic_symbol'].str.strip()
 
-        secwise_returns = pd.DataFrame({'sectors': sectors, 'Avg_yearly_return': sec_annual_returns}).sort_values('Avg_yearly_return', ascending=False)
-        st.dataframe(secwise_returns)
+    sector_map = dict(zip(sectors_df['tic_symbol'],sectors_df['sector']))
+    yearly_return_df['sector'] = yearly_return_df['Tickers'].map(sector_map)
+    
 
-        plt.figure(figsize=(8, 4))
-        plt.bar(secwise_returns['sectors'], secwise_returns['Avg_yearly_return'])
-        plt.xlabel('Sectors')
-        plt.ylabel('Avg Yearly Return')
-        plt.title('Sector-wise Average Yearly Return')
-        plt.xticks(rotation=90)
-        st.pyplot(plt)
-    except Exception as e:
-        st.error(f"Error loading sector data: {e}")
+    yearly_return_df.loc[yearly_return_df['Tickers']=='TATACONSUM', 'sector'] = 'FMCG'
 
-# ----------------------------- #
-# 5️⃣ STOCK PRICE CORRELATION
-# ----------------------------- #
+    sector_map = ({
+        'BHARTIARTL':'TELECOM',
+        'ADANIENT':'MISCELLANEOUS'
+    })
+
+    yearly_return_df['sector'] = yearly_return_df['Tickers'].map(sector_map).fillna(yearly_return_df['sector'])
+
+    yearly_return_df.loc[yearly_return_df['Tickers']=='BRITANNIA', 'sector'] = 'FMCG'
+
+    sectors = list(yearly_return_df['sector'].unique())
+    sec_annual_returns = []
+    for sec in sectors:
+        info = yearly_return_df[yearly_return_df['sector']==sec].reset_index(drop=True)
+        sec_annual_return = info['Annual_returns'].mean()
+        sec_annual_returns.append(sec_annual_return)
+
+    secwise_returns = pd.DataFrame({
+        'sectors':sectors,
+        'Avg_yearly_return':sec_annual_returns
+    })
+
+    secwise_returns = secwise_returns.sort_values('Avg_yearly_return',ascending=False).reset_index(drop=True)
+    st.dataframe(secwise_returns)
+
+    plt.bar(secwise_returns['sectors'],secwise_returns['Avg_yearly_return'])
+    plt.xlabel('Sectors')
+    plt.ylabel('Avg_yearly_return')
+    plt.title('Sectors Wise Avg Yearly Return')
+    plt.xticks(rotation = 90)
+    st.pyplot(plt)
+
+
+
 if r == '4.Stock Price Correlation':
-    if clo_pct_df.empty:
-        st.error("No stock data to calculate correlation.")
-    else:
-        plt.figure(figsize=(56, 40))
-        sns.heatmap(
-            clo_pct_df.corr(),
-            annot=True,
-            fmt=".2f",
-            cmap='coolwarm',
-            linewidths=0.5,
-            square=True,
-            annot_kws={"size": 18},
-            cbar_kws={"label": "Correlation", "shrink": 0.8}
-        )
-        plt.title("Stock Correlation Matrix", fontsize=28)
-        plt.xticks(rotation=45, ha='right', fontsize=18)
-        plt.yticks(rotation=0, fontsize=18)
-        plt.tight_layout()
-        st.pyplot(plt)
+    correlation_matrix = clo_pct_df.corr()
+    print(correlation_matrix)
+    len(clo_pct_df.columns)
 
-# ----------------------------- #
-# 6️⃣ TOP 5 GAINERS AND LOSERS (MONTHLY)
-# ----------------------------- #
+    import seaborn as sns
+    import matplotlib.pyplot as plt
+
+    plt.figure(figsize=(56, 40))  # 👈 Increase width and height in inches
+
+    sns.heatmap(
+        clo_pct_df.corr(),
+        annot=True,
+        fmt=".2f",                   # Format values to 2 decimals
+        cmap='coolwarm',
+        linewidths=0.5,
+        square=True,
+        annot_kws={"size": 18},     # 👈 Increase annotation text size
+        cbar_kws={"label": "Correlation", "shrink": 0.8}  # Optional: better colorbar
+    )
+
+
+    plt.title("Stock Correlation Matrix", fontsize=28)
+    plt.xticks(rotation=45, ha='right', fontsize=18)
+    plt.yticks(rotation=0, fontsize=18)
+
+    plt.tight_layout()                                  # Auto-fit everything
+    st.pyplot(plt)
+
+
 if r == '5.Top 5 Gainers and Losers':
     stocks = list(final_df['Ticker'].unique())
-    tickers, months, months_open, months_close = [], [], [], []
-
+    tickers = []
+    months = []
+    months_open = []
+    months_close = []
     for stock in stocks:
-        infos = final_df[final_df['Ticker'] == stock].reset_index(drop=True)
-        if infos.empty:
-            continue
+        infos = final_df[final_df['Ticker']==stock].reset_index(drop=True)
         grouped_data = infos.groupby(['month'])
         for a, b in grouped_data:
             months.append(b.iloc[0]['month'])
+
             tickers.append(stock)
             months_open.append(b.iloc[0]['open'])
             months_close.append(b.iloc[-1]['close'])
 
     monthly_return = pd.DataFrame({
-        'tickers': tickers,
-        'months': months,
-        'months_open': months_open,
-        'months_close': months_close
+        'tickers':tickers,
+        'months':months,
+        'months_open':months_open,
+        'months_close':months_close
     })
-    monthly_return['month_return'] = (monthly_return['months_close'] - monthly_return['months_open']) / monthly_return['months_open']
+    monthly_return['month_return'] = (
+        (monthly_return['months_close'] - monthly_return['months_open'])
+        / monthly_return['months_open']
+    )
 
-    periods = sorted(monthly_return['months'].unique())
+    periods = list(monthly_return['months'].unique())
+
     for period in periods:
         temp = monthly_return[monthly_return['months'] == period]
-        if temp.empty:
-            continue
         top5 = temp.sort_values(by='month_return', ascending=False).head(5)
         bottom5 = temp[temp['month_return'] < 0].sort_values(by='month_return').head(5)
+
+        # Combine both sets for plotting
         combined = pd.concat([top5, bottom5])
 
+        # Ploty
+        # thei plasit siteurgery id is forll
         plt.figure(figsize=(10, 6))
-        bars = plt.bar(combined['tickers'], combined['month_return'],
-                       color=combined['month_return'].apply(lambda x: 'green' if x > 0 else 'red'))
+        bars = plt.bar(combined['tickers'], combined['month_return'], 
+                        color=combined['month_return'].apply(lambda x: 'green' if x > 0 else 'red'))
+
+        # Title and formatting
 
         plt.title(f'Top 5 Gainers and Losers – {pd.to_datetime(period).strftime("%B %Y")}')
         plt.ylabel('Monthly Return (%)')
-        plt.xticks(rotation=75)
+        plt.xticks(rotation = 75)
         plt.axhline(0, color='black', linewidth=0.8)
         plt.grid(axis='y', linestyle='--', linewidth=0.5)
 
+        # Add return labels on bars
         for bar in bars:
             height = bar.get_height()
             plt.annotate(f'{height:.2%}', xy=(bar.get_x() + bar.get_width()/2, height),
-                         xytext=(0, 3 if height >= 0 else -15),
-                         textcoords="offset points", ha='center', fontsize=8)
+                            xytext=(0, 3 if height >= 0 else -15),
+                            textcoords="offset points", ha='center', fontsize=8)
 
         plt.tight_layout()
         st.pyplot(plt)
