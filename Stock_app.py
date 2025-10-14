@@ -10,58 +10,39 @@ import os
 st.title('📊 Stock Analysis Dashboard')
 st.markdown("---")  # Horizontal divider
 
-# ✅ List of folders to scan for YAML files
-stk_data_list = [
-    '2023-10','2023-11','2023-12',
-    '2024-01','2024-02','2024-03','2024-04','2024-05',
-    '2024-06','2024-07','2024-08','2024-09','2024-10','2024-11'
-]
-
-# ✅ Master list for all data
+stk_data_list = ['2023-10','2023-11','2023-12','2024-01','2024-02','2024-03','2024-04','2024-05','2024-06',
+                 '2024-07','2024-08','2024-09','2024-10','2024-11']
 all_dfs = []
-
-# ✅ Load and combine YAML data
-st.subheader("🔄 Loading stock data...")
+# len_all_dfs = []
 
 for i in stk_data_list:
-    folder_path = fr"C:\Users\KRHA1002\OneDrive - Nielsen IQ\Profile\GUVI\Project 2\data\{i}"
-    yaml_files = glob.glob(os.path.join(folder_path, "*.yaml"))
-
-    st.write(f"📁 Processing {i}: Found {len(yaml_files)} YAML files")
-
-    file_dfs = []
+    # Fix 1: Use f-string to insert the folder name into the path
+    yaml_files = glob.glob(fr"C:\Users\KRHA1002\OneDrive - Nielsen IQ\Profile\GUVI\Project 2\data\{i}\*.yaml")
+    
+    file_dfs = []  # Store DataFrames for this folder
+    # len_file_dfs = []
+    
     for j in yaml_files:
-        try:
-            with open(j, 'r') as file:
-                yaml_data = yaml.safe_load(file)
-            df = pd.DataFrame(yaml_data)
-            file_dfs.append(df)
-        except Exception as e:
-            st.warning(f"⚠️ Error reading {j}: {e}")
-
+        with open(j, 'r') as file:  # Fix 2: Remove quotes around j and use 'r' correctly
+            yaml_data = yaml.safe_load(file)
+            
+        df = pd.DataFrame(yaml_data)  # Fix 3: No need for df(num)
+        file_dfs.append(df)
+    #     len_file_dfs.append(len(df))
+    # print(sum(len_file_dfs))
+    
     if file_dfs:
-        month_df = pd.concat(file_dfs, ignore_index=True)
-        all_dfs.append(month_df)
-    else:
-        st.warning(f"⚠️ No valid YAML files found in {folder_path}")
-
-# ✅ Stop execution if no data found
-if not all_dfs:
-    st.error("❌ No YAML data found in any folder. Please check the file paths and try again.")
-    st.stop()
-
-# ✅ Combine all monthly data
+        # Fix 4: Append the concatenated result of this folder to the master list
+        whole_df = pd.concat(file_dfs, ignore_index=True)
+        all_dfs.append(whole_df)
+#         len_all_dfs.append(len(whole_df))
+# print (sum(len_all_dfs))
+# Optional: Combine everything into one DataFrame
 final_df = pd.concat(all_dfs, ignore_index=True)
-st.success(f"✅ Combined {len(final_df)} total records successfully!")
+# print(final_df.head())
+# Save the combined and cleaned DataFrame
+final_df.to_csv(r'C:\Users\KRHA1002\OneDrive - Nielsen IQ\Profile\GUVI\Project 2\data\final.csv', index=False)
 
-# ✅ Optional: Save for reference
-output_path = r'C:\Users\KRHA1002\OneDrive - Nielsen IQ\Profile\GUVI\Project 2\data\final.csv'
-final_df.to_csv(output_path, index=False)
-st.write(f"💾 Combined data saved to: `{output_path}`")
-
-# ----------------------------- #
-# 📈 CALCULATIONS
-# ----------------------------- #
 
 Tickers = list(final_df['Ticker'].unique())
 returns = []
@@ -74,23 +55,22 @@ cum_returns = []
 clo_pct_df = pd.DataFrame()
 
 for Tic in Tickers:
-    data = final_df[final_df['Ticker'] == Tic].reset_index(drop=True)
-
-    # Skip if empty
-    if data.empty:
-        continue
-
-    clo_pct_df[Tic] = data['close'].pct_change()
+    data = final_df[final_df['Ticker']== Tic].reset_index(drop=True)
+    clo_pct_df[Tic]= data['close'].pct_change()
     start_price = data.iloc[0]['open']
     close_price = data.iloc[-1]['close']
-    yearly_return = (close_price / start_price) - 1
+    yearly_return = (close_price/start_price)-1
     avg_price = data['close'].mean().round(2)
     avg_volume = data['volume'].mean()
-
-    daily_rets = data['close'].pct_change().dropna()
-    cum_returns.append(daily_rets.sum())
-    std_dev = daily_rets.std()
-
+    daily_rets = []
+    for i in range(1,len(data.index)):
+        daily_ret = (data.iloc[i]['close']-data.iloc[i-1]['close'])/data.iloc[i-1]['close']
+        daily_rets.append(daily_ret)
+    cum_returns.append(sum(daily_rets))
+    mean = sum(daily_rets) / len(daily_rets)
+    variance = sum((x - mean) ** 2 for x in daily_rets) / (len(daily_rets) - 1)
+    std_dev = variance ** 0.5
+ 
     std_devs.append(std_dev)
     start_prices.append(start_price)
     close_prices.append(close_price)
