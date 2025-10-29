@@ -1,10 +1,20 @@
+# Core data handling
 pandas
 numpy
 pyyaml
+
+# Visualization
 matplotlib
 seaborn
 streamlit
+
+# File and system utilities
 glob2
+
+# Database connectors (optional — if you connect to MySQL or PostgreSQL)
 sqlalchemy
 psycopg2-binary
 mysql-connector-python
+
+# (Optional) For notebook or Jupyter use
+ipykernel
